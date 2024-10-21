@@ -50,45 +50,40 @@ import java.util.PriorityQueue;
 public class Solution7 {
 
     public String smallestStringWithSwaps(String s, List<List<Integer>> pairs) {
-
         if (pairs.size() <= 1) {
             return s;
         }
 
-        // 第 1 步：将任意交换的结点对输入并查集
+        // 将任意交换的结点对输入并查集
         int len = s.length();
-        UnionFind unionFind = new UnionFind(len-1);
+        UnionFind unionFind = new UnionFind(len);
         for (List<Integer> pair : pairs) {
             int index1 = pair.get(0);
             int index2 = pair.get(1);
             unionFind.union(index1, index2);
         }
 
-        // 第 2 步：构建映射关系
+        // 构建映射关系
         char[] charArray = s.toCharArray();
         // key：连通分量的代表元，value：同一个连通分量的字符集合（保存在一个优先队列中）
         Map<Integer, PriorityQueue<Character>> hashMap = new HashMap<>(len);
-        for (int i = 0; i < len; i++)
-            int root = unionFind.find(i);
-            hashMap.computeIfAbsent(root, key -> new PriorityQueue<>()).offer(charArray[i]);
-
-        // 第 3 步：重组字符串
-        StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < len; i++) {
             int root = unionFind.find(i);
-            stringBuilder.append(hashMap.get(root).poll());
-            stringBuilder.append(" ");
+            hashMap.computeIfAbsent(root, key -> new PriorityQueue<>()).offer(charArray[i]);
         }
-        return stringBuilder.toString();
+
+        // 重组字符串
+        char[] result = new char[len];
+        for (int i = 0; i < len; i++) {
+            int root = unionFind.find(i);
+            result[i] = hashMap.get(root).poll();
+        }
+        return new String(result);
     }
 
     private class UnionFind {
-
-        private int[] parent;
-        /**
-         * 以 i 为根结点的子树的高度（引入了路径压缩以后该定义并不准确）
-         */
-        private int[] rank;
+        private final int[] parent;
+        private final int[] rank;
 
         public UnionFind(int n) {
             this.parent = new int[n];
@@ -106,16 +101,12 @@ public class Solution7 {
                 return;
             }
 
-            if (rank[rootX] == rank[rootY]) {
-                parent[rootX] = rootY;
-                // 此时以 rootY 为根结点的树的高度仅加了 1
-                rank[rootY]++;
-            } else if (rank[rootX] < rank[rootY]) {
-                parent[rootX] = rootY;
-                // 此时以 rootY 为根结点的树的高度不变
-            } else {
-                // 同理，此时以 rootX 为根结点的树的高度不变
+            if (rank[rootX] > rank[rootY]) {
                 parent[rootY] = rootX;
+                rank[rootX] += rank[rootY];
+            } else {
+                parent[rootX] = rootY;
+                rank[rootY] += rank[rootX];
             }
         }
 
